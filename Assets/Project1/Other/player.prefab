@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 195944525770116940}
   - component: {fileID: 2803640319530540194}
   - component: {fileID: 7564648109206469276}
-  - component: {fileID: 7005020406500907922}
+  - component: {fileID: -7609807957246336412}
   - component: {fileID: 6239290981422691267}
   m_Layer: 0
   m_Name: player
@@ -140,7 +140,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 80
   m_CollisionDetection: 0
---- !u!114 &7005020406500907922
+--- !u!114 &-7609807957246336412
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -152,7 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 4099762186
+  GlobalObjectIdHash: 2430177189
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -178,3 +178,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  score:
+    m_InternalValue: 0
