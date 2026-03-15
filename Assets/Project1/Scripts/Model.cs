@@ -9,9 +9,6 @@ public class Model : NetworkBehaviour
     //networked position
     private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>();
     
-    //networked player name
-    private NetworkVariable<NetworkString> playerName = new NetworkVariable<NetworkString>();
-    
     private Vector2 currentInput;
     private View view;
 
@@ -55,23 +52,4 @@ public class Model : NetworkBehaviour
             currentInput = input.normalized;
         }
     }
-}
-
-//struct for networking strings
-public struct NetworkString : INetworkSerializable
-{
-    private string info;
-
-    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-    {
-        serializer.SerializeValue(ref info);
-    }
-
-    public override string ToString()
-    {
-        return info;
-    }
-
-    public static implicit operator string(NetworkString s) => s.ToString();
-    public static implicit operator NetworkString(string s) => new NetworkString() { info = s };
 }
