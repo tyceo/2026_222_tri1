@@ -179,6 +179,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f485ae487acb21448236a854cd5551b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nametagHeight: 1.5
+  nametagScale: 0.1
 --- !u!114 &7514013075566333198
 MonoBehaviour:
   m_ObjectHideFlags: 0
