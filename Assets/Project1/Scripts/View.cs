@@ -30,6 +30,7 @@ public class View : MonoBehaviour
     {
         //create nametag GameObject
         nametagObject = new GameObject("Nametag");
+        nametagObject.tag = "NameTag"; // Set NameTag tag
         nametagObject.transform.SetParent(transform);
         nametagObject.transform.localPosition = new Vector3(0, nametagHeight, 0);
         nametagObject.transform.localScale = Vector3.one * nametagScale;

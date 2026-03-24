@@ -6,11 +6,15 @@ public class Model : NetworkBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
+    [SerializeField] private float interpolationSpeed = 15f;
 
-    //networked position
-    private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>();
+    //syncs position across all clients
+    private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>(
+        default,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
     
-    //networked player name using FixedString (better for Netcode)
+    //syncs player name across network
     private NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>(
         default,
         NetworkVariableReadPermission.Everyone,
@@ -18,21 +22,27 @@ public class Model : NetworkBehaviour
     
     private Vector2 currentInput;
     private View view;
+    private FirstPersonCamera fpsCamera;
 
     void Start()
     {
         view = GetComponent<View>();
+        fpsCamera = GetComponent<FirstPersonCamera>();
     }
 
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
         
-        //set player name on spawn
+        //server sets initial position
         if (IsServer)
         {
-            //check the owner's client ID
-            //host's client ID is 0 others higher are 
+            networkPosition.Value = transform.position;
+        }
+        
+        //server assigns name based on client id
+        if (IsServer)
+        {
             if (OwnerClientId == 0)
             {
                 playerName.Value = "Player1";
@@ -45,10 +55,9 @@ public class Model : NetworkBehaviour
             Debug.Log($"Server set name for ClientID {OwnerClientId}: {playerName.Value}");
         }
         
-        //listen for name changes
+        //subscribe to network variable changes
         playerName.OnValueChanged += OnPlayerNameChanged;
         
-        //initialize nametag for all clients and delay slightly 
         Invoke(nameof(InitializeNametag), 0.1f);
     }
 
@@ -65,7 +74,7 @@ public class Model : NetworkBehaviour
     {
         base.OnNetworkDespawn();
         
-        //unsubscribe from events
+        //unsubscribe from network variable callbacks
         playerName.OnValueChanged -= OnPlayerNameChanged;
     }
 
@@ -80,25 +89,26 @@ public class Model : NetworkBehaviour
 
     void Update()
     {
-        //server updates the position based on input
+        //server processes movement and updates network position
         if (IsServer)
         {
-            Vector3 movement = new Vector3(currentInput.x, 0, currentInput.y) * moveSpeed * Time.deltaTime;
+            Vector3 forward = transform.forward;
+            Vector3 right = transform.right;
+            
+            Vector3 movement = (right * currentInput.x + forward * currentInput.y) * moveSpeed * Time.deltaTime;
             transform.position += movement;
             
-
             networkPosition.Value = transform.position;
             
-            //reset input after applying
             currentInput = Vector2.zero;
         }
-        else
+        
+        //clients interpolate to server's authoritative position
+        if (!IsServer)
         {
-            //clients interpolate to the networked position
-            transform.position = Vector3.Lerp(transform.position, networkPosition.Value, Time.deltaTime * 10f);
+            transform.position = Vector3.Lerp(transform.position, networkPosition.Value, interpolationSpeed * Time.deltaTime);
         }
 
-        //update view on all clients
         if (view != null)
         {
             view.UpdateVisuals(transform.position);
@@ -107,10 +117,21 @@ public class Model : NetworkBehaviour
 
     public void SetMovementInput(Vector2 input)
     {
-        //this should only be called on the server
+        //only server processes movement input
         if (IsServer)
         {
             currentInput = input.normalized;
+        }
+    }
+
+    //forces position update from spawn manager
+    public void ForceSetPosition(Vector3 position)
+    {
+        if (IsServer)
+        {
+            transform.position = position;
+            networkPosition.Value = position;
+            Debug.Log($"Force set position to {position}");
         }
     }
 }
