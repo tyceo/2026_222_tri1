@@ -64,7 +64,7 @@ public class FirstPersonCamera : NetworkBehaviour
                     listener.enabled = true;
                 }
                 
-                Camera[] allCameras = FindObjectsOfType<Camera>(true);
+                Camera[] allCameras = FindObjectsByType<Camera>(FindObjectsSortMode.None);
                 foreach (Camera cam in allCameras)
                 {
                     if (cam != playerCamera && cam.gameObject.scene.name != null)
@@ -73,7 +73,6 @@ public class FirstPersonCamera : NetworkBehaviour
                     }
                 }
 
-                Debug.Log($"Local player camera enabled for client {OwnerClientId}");
             }
 
             Cursor.lockState = CursorLockMode.Locked;
@@ -87,7 +86,6 @@ public class FirstPersonCamera : NetworkBehaviour
                 playerCamera.enabled = false;
                 playerCamera.gameObject.tag = "Untagged";
                 
-                Debug.Log($"Remote player camera disabled for client {OwnerClientId}");
             }
             
             AudioListener listener = GetComponentInChildren<AudioListener>();

@@ -4,11 +4,11 @@ using Unity.Netcode;
 public class PlayerHealth : NetworkBehaviour
 {
     [Header("Health Settings")]
-    [SerializeField] private float maxHealth = 5f;
+    [SerializeField] private float maxHealth = 2f;
     
     //syncs health across network
     private NetworkVariable<float> currentHealth = new NetworkVariable<float>(
-        5f,
+        2f,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
 

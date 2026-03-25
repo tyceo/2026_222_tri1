@@ -64,7 +64,7 @@ public class ClientInputs : NetworkBehaviour
     }
 
     //rpc: client sends input to server
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server)]
     private void SendMovementInput_ServerRpc(Vector2 input)
     {
         if (model != null)
@@ -74,7 +74,7 @@ public class ClientInputs : NetworkBehaviour
     }
 
     //rpc: client requests to shoot, server validates and spawns bullet
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server)]
     private void RequestShoot_ServerRpc(Vector3 cameraPosition, Vector3 cameraDirection)
     {
         if (inventory == null) return;
@@ -113,7 +113,7 @@ public class ClientInputs : NetworkBehaviour
     }
 
     //rpc: client requests reload, server validates
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server)]
     private void RequestReload_ServerRpc()
     {
         if (inventory == null) return;
@@ -144,7 +144,7 @@ public class ClientInputs : NetworkBehaviour
     }
 
     //rpc: client requests to drop gun
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server)]
     private void RequestDropGun_ServerRpc()
     {
         if (inventory != null)
@@ -153,14 +153,14 @@ public class ClientInputs : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.Server, RequireOwnership = true)]
+    [Rpc(SendTo.Server)]
     private void GetBigOrDieTrying_RequestToServer_Rpc()
     {
         GetBigOrDieTrying_ServerToClients_Rpc();
     }
 
     //rpc: server sends to all clients
-    [Rpc(SendTo.ClientsAndHost, RequireOwnership = false)]
+    [Rpc(SendTo.ClientsAndHost)]
     private void GetBigOrDieTrying_ServerToClients_Rpc()
     {
         GetComponent<Renderer>().material.color = Color.red;
