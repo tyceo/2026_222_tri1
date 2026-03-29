@@ -17,19 +17,18 @@ public class GunPickup : NetworkBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // Only process on server
+        //nnly process on server
         if (!IsServer) return;
         if (isPickedUp) return;
 
-        // Check if it's a player
+        //check if player
         PlayerInventory playerInventory = other.GetComponent<PlayerInventory>();
         if (playerInventory != null)
         {
-            // Try to equip the gun
+
             if (playerInventory.TryEquipGun(this))
             {
                 isPickedUp = true;
-                Debug.Log($"Gun picked up by {other.name}");
             }
         }
     }
@@ -77,7 +76,7 @@ public class GunPickup : NetworkBehaviour
             col.enabled = true;
         }
 
-        // Set gun as not equipped
+        //set gun as not equipped
         if (gunModel != null)
         {
             gunModel.SetEquipped(false);

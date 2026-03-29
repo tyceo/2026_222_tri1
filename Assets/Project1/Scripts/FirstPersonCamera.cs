@@ -80,7 +80,6 @@ public class FirstPersonCamera : NetworkBehaviour
         }
         else
         {
-            //remote players have disabled cameras
             if (playerCamera != null)
             {
                 playerCamera.enabled = false;
@@ -108,7 +107,7 @@ public class FirstPersonCamera : NetworkBehaviour
     //callback when rotation changes on network
     private void OnRotationChanged(float previousValue, float newValue)
     {
-        //non-owners update their rotation from network
+        //non owners update their rotation from network
         if (!IsOwner)
         {
             horizontalRotation = newValue;
@@ -189,27 +188,5 @@ public class FirstPersonCamera : NetworkBehaviour
         return playerCamera;
     }
 
-    public Transform GetCameraHolder()
-    {
-        return cameraHolder;
-    }
 
-    public float GetHorizontalRotation()
-    {
-        return horizontalRotation;
-    }
-
-    public void HidePlayerModel(bool hide)
-    {
-        if (!IsLocalPlayer) return;
-
-        Renderer[] renderers = GetComponentsInChildren<Renderer>();
-        foreach (Renderer renderer in renderers)
-        {
-            if (renderer.gameObject.CompareTag("PlayerBody"))
-            {
-                renderer.enabled = !hide;
-            }
-        }
-    }
 }

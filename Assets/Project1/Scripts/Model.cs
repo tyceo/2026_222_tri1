@@ -131,7 +131,6 @@ public class Model : NetworkBehaviour
         {
             transform.position = position;
             networkPosition.Value = position;
-            Debug.Log($"Force set position to {position}");
         }
     }
 }

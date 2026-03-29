@@ -43,7 +43,6 @@ public class PlayerSpawnManager : NetworkBehaviour
                     model.ForceSetPosition(hostSpawn);
                 }
                 
-                Debug.Log($"Host player positioned at {hostSpawn}");
             }
         }
     }
@@ -57,8 +56,6 @@ public class PlayerSpawnManager : NetworkBehaviour
         Vector3 spawnPosition = GetSpawnPosition(request.ClientNetworkId);
         response.Position = spawnPosition;
         response.Rotation = Quaternion.identity;
-
-        Debug.Log($"Client {request.ClientNetworkId} approved. Spawn position: {spawnPosition}");
     }
 
     private Vector3 GetSpawnPosition(ulong clientId)

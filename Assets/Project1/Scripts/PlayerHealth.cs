@@ -4,13 +4,20 @@ using Unity.Netcode;
 public class PlayerHealth : NetworkBehaviour
 {
     [Header("Health Settings")]
-    [SerializeField] private float maxHealth = 2f;
+    [SerializeField] private float maxHealth = 3f;
     
     //syncs health across network
     private NetworkVariable<float> currentHealth = new NetworkVariable<float>(
         2f,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
+
+    private View view;
+
+    private void Start()
+    {
+        view = GetComponent<View>();
+    }
 
     public override void OnNetworkSpawn()
     {
@@ -62,11 +69,10 @@ public class PlayerHealth : NetworkBehaviour
 
     private void UpdateHealthVisuals(float health)
     {
-        Renderer renderer = GetComponent<Renderer>();
-        if (renderer != null)
+        if (view != null)
         {
             float healthPercent = health / maxHealth;
-            renderer.material.color = Color.Lerp(Color.red, Color.green, healthPercent);
+            view.UpdateHealthColor(healthPercent);
         }
     }
 
@@ -76,7 +82,25 @@ public class PlayerHealth : NetworkBehaviour
         
         if (IsServer)
         {
+            //point to other player
+            AwardPointToOtherPlayer();
             RespawnPlayer();
+        }
+    }
+
+    private void AwardPointToOtherPlayer()
+    {
+        if (!IsServer) return;
+        
+        ClientInputs[] allPlayers = FindObjectsOfType<ClientInputs>();
+        
+        foreach (ClientInputs player in allPlayers)
+        {
+            //point to the player who is not this one
+            if (player.OwnerClientId != OwnerClientId)
+            {
+                player.score.Value++;
+            }
         }
     }
 
@@ -88,16 +112,7 @@ public class PlayerHealth : NetworkBehaviour
         
         transform.position = new Vector3(0, 1, 0);
         
-        Debug.Log($"Player {OwnerClientId} respawned!");
+        Debug.Log("respawned");
     }
 
-    public float GetCurrentHealth()
-    {
-        return currentHealth.Value;
-    }
-
-    public float GetMaxHealth()
-    {
-        return maxHealth;
-    }
 }

@@ -20,12 +20,10 @@ public class GunModel : NetworkBehaviour
     private NetworkVariable<int> ammoCount = new NetworkVariable<int>(3);
     
     private float lastFireTime;
-    private GunView gunView;
     private PlayerInventory ownerInventory;
 
     void Awake()
     {
-        gunView = GetComponent<GunView>();
         ammoCount.Value = currentAmmo;
     }
 
@@ -36,8 +34,6 @@ public class GunModel : NetworkBehaviour
         //subscribe to network variable changes
         isEquipped.OnValueChanged += OnEquippedStateChanged;
         ammoCount.OnValueChanged += OnAmmoChanged;
-        
-        UpdateVisuals();
     }
 
     public override void OnNetworkDespawn()
@@ -50,29 +46,17 @@ public class GunModel : NetworkBehaviour
 
     private void OnEquippedStateChanged(bool previousValue, bool newValue)
     {
-        UpdateVisuals();
+
     }
 
     private void OnAmmoChanged(int previousValue, int newValue)
     {
         currentAmmo = newValue;
-        if (gunView != null)
-        {
-            gunView.UpdateAmmoDisplay(newValue, maxAmmo);
-        }
 
         //server destroys gun when ammo reaches 0
         if (newValue <= 0 && IsServer)
         {
             DestroyGun();
-        }
-    }
-
-    private void UpdateVisuals()
-    {
-        if (gunView != null)
-        {
-            gunView.SetEquippedState(isEquipped.Value);
         }
     }
 
@@ -132,26 +116,12 @@ public class GunModel : NetworkBehaviour
             ownerInventory = inventory;
         }
     }
-
-    public bool IsEquipped()
-    {
-        return isEquipped.Value;
-    }
-
-    public void Reload()
-    {
-        if (IsServer)
-        {
-            ammoCount.Value = maxAmmo;
-            currentAmmo = maxAmmo;
-        }
-    }
+    
 
     private void DestroyGun()
     {
         if (!IsServer) return;
-
-        Debug.Log("Gun out of ammo - destroying gun");
+        
 
         if (isEquipped.Value && ownerInventory != null)
         {

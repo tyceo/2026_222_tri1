@@ -8,7 +8,7 @@ public class BulletView : MonoBehaviour
     
     void Start()
     {
-        // Ensure visuals are active
+        //ensure visuals are active
         if (bulletModel != null)
         {
             bulletModel.SetActive(true);
@@ -17,6 +17,6 @@ public class BulletView : MonoBehaviour
 
     public void PlayHitEffect()
     {
-        // Can add particle effects here
+        //particle effect
     }
 }
