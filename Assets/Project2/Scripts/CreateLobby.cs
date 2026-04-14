@@ -2,9 +2,12 @@ using UnityEngine;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Authentication;
+using System.Threading.Tasks;
 
 public class CreateLobby : MonoBehaviour
 {
+    private Lobby currentLobby;
+
     public async void CreateLobbyFunction()
     {
         if (!AuthenticationService.Instance.IsSignedIn)
@@ -21,12 +24,24 @@ public class CreateLobby : MonoBehaviour
             IsPrivate = false
         };
 
-        Lobby lobby = await LobbyService.Instance.CreateLobbyAsync(
+        currentLobby = await LobbyService.Instance.CreateLobbyAsync(
             lobbyName,
             maxPlayers,
             options
         );
 
-        Debug.Log("Lobby created Code: " + lobby.LobbyCode);
+        Debug.Log("Lobby created Code: " + currentLobby.LobbyCode);
+
+        //start heartbeat loop
+        StartCoroutine(HeartbeatLoop());
+    }
+
+    private System.Collections.IEnumerator HeartbeatLoop()
+    {
+        while (currentLobby != null)
+        {
+            LobbyService.Instance.SendHeartbeatPingAsync(currentLobby.Id);
+            yield return new WaitForSeconds(15f);
+        }
     }
 }
