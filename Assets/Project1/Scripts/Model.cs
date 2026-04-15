@@ -40,25 +40,49 @@ public class Model : NetworkBehaviour
             networkPosition.Value = transform.position;
         }
         
-        //server assigns name based on client id
-        if (IsServer)
+        //client requests their chosen name be set
+        if (IsOwner && !IsServer)
         {
-            if (OwnerClientId == 0)
-            {
-                playerName.Value = "Player1";
-            }
-            else
-            {
-                playerName.Value = "Player2";
-            }
+            string chosenName = PlayerNameManager.Instance != null 
+                ? PlayerNameManager.Instance.PlayerName 
+                : $"Player{OwnerClientId}";
             
-            Debug.Log($"Server set name for ClientID {OwnerClientId}: {playerName.Value}");
+            RequestSetNameServerRpc(chosenName);
+        }
+        
+        //server (host) sets their own name
+        if (IsServer && IsOwner)
+        {
+            string chosenName = PlayerNameManager.Instance != null 
+                ? PlayerNameManager.Instance.PlayerName 
+                : "Host";
+            
+            playerName.Value = chosenName;
+            Debug.Log($"Server set own name: {playerName.Value}");
         }
         
         //subscribe to network variable changes
         playerName.OnValueChanged += OnPlayerNameChanged;
         
         Invoke(nameof(InitializeNametag), 0.1f);
+    }
+
+    [ServerRpc]
+    private void RequestSetNameServerRpc(string name, ServerRpcParams rpcParams = default)
+    {
+        // Validate name length
+        if (name.Length > 12)
+        {
+            name = name.Substring(0, 12);
+        }
+        
+        if (string.IsNullOrEmpty(name))
+        {
+            name = $"Player{OwnerClientId}";
+        }
+        
+        playerName.Value = name;
+        Debug.Log($"Server set name for ClientID {OwnerClientId}: {playerName.Value}");
     }
 
     private void InitializeNametag()
