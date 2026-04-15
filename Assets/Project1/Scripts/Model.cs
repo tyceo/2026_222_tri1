@@ -157,4 +157,10 @@ public class Model : NetworkBehaviour
             networkPosition.Value = position;
         }
     }
+
+    //get player name for UI display
+    public string GetPlayerName()
+    {
+        return playerName.Value.ToString();
+    }
 }

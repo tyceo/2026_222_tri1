@@ -92,37 +92,45 @@ public class View : MonoBehaviour
 
     private void UpdateScoreDisplay()
     {
-        //find all players and get their scores
-        ClientInputs[] players = FindObjectsOfType<ClientInputs>();
+        //find all players and get their scores and names
+        Model[] players = FindObjectsOfType<Model>();
         
         int hostScore = 0;
         int clientScore = 0;
+        string hostName = "Host";
+        string clientName = "Client";
         
-        foreach (ClientInputs player in players)
+        foreach (Model player in players)
         {
-            if (player.OwnerClientId == 0)
+            ClientInputs clientInputs = player.GetComponent<ClientInputs>();
+            if (clientInputs != null)
             {
-                hostScore = player.score.Value;
-            }
-            else
-            {
-                clientScore = player.score.Value;
+                if (player.OwnerClientId == 0)
+                {
+                    hostScore = clientInputs.score.Value;
+                    hostName = player.GetPlayerName();
+                }
+                else
+                {
+                    clientScore = clientInputs.score.Value;
+                    clientName = player.GetPlayerName();
+                }
             }
         }
         
-        UpdateScores(hostScore, clientScore);
+        UpdateScores(hostScore, clientScore, hostName, clientName);
     }
 
-    public void UpdateScores(int hostScore, int clientScore)
+    public void UpdateScores(int hostScore, int clientScore, string hostName, string clientName)
     {
         if (hostScoreText != null)
         {
-            hostScoreText.text = $"Host: {hostScore}";
+            hostScoreText.text = $"{hostName}: {hostScore}";
         }
         
         if (clientScoreText != null)
         {
-            clientScoreText.text = $"Client: {clientScore}";
+            clientScoreText.text = $"{clientName}: {clientScore}";
         }
     }
 }

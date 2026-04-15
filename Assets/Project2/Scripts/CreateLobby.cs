@@ -10,10 +10,18 @@ using Unity.Services.Relay.Models;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using System.Collections.Generic;
+using TMPro;
 
 public class CreateLobby : MonoBehaviour
 {
     private Lobby currentLobby;
+    
+    [Header("UI References")]
+    [SerializeField] private TextMeshProUGUI lobbyCodeText;
+    
+    [SerializeField] private GameObject hideWhenLobbyCreated;
+    [SerializeField] private GameObject hideWhenLobbyCreated2;
+    [SerializeField] private GameObject hideWhenLobbyCreated3;
 
     public async void CreateLobbyFunction()
     {
@@ -38,6 +46,15 @@ public class CreateLobby : MonoBehaviour
         );
 
         Debug.Log("Lobby created Code: " + currentLobby.LobbyCode);
+        
+        //display lobby code on UI
+        if (lobbyCodeText != null)
+        {
+            lobbyCodeText.text = $"Lobby Code: {currentLobby.LobbyCode}";
+            hideWhenLobbyCreated.SetActive(false);
+            hideWhenLobbyCreated2.SetActive(false);
+            hideWhenLobbyCreated3.SetActive(false);
+        }
 
         //relay and start host netcode
 

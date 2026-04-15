@@ -13,6 +13,11 @@ using Unity.Netcode.Transports.UTP;
 public class JoinLobby : MonoBehaviour
 {
     public TMP_InputField inputField; //inspector
+    
+
+    [SerializeField] private GameObject hideWhenLobbyCreated;
+    [SerializeField] private GameObject hideWhenLobbyCreated2;
+    [SerializeField] private GameObject hideWhenLobbyCreated3;
 
     public async void JoinLobbyFromInput()
     {
@@ -23,6 +28,10 @@ public class JoinLobby : MonoBehaviour
         }
 
         string lobbyCode = inputField.text;
+        
+        hideWhenLobbyCreated.SetActive(false);
+        hideWhenLobbyCreated2.SetActive(false);
+        hideWhenLobbyCreated3.SetActive(false);
 
         Lobby lobby = await LobbyService.Instance.JoinLobbyByCodeAsync(lobbyCode);
 
