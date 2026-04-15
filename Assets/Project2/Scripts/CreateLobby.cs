@@ -22,6 +22,7 @@ public class CreateLobby : MonoBehaviour
     [SerializeField] private GameObject hideWhenLobbyCreated;
     [SerializeField] private GameObject hideWhenLobbyCreated2;
     [SerializeField] private GameObject hideWhenLobbyCreated3;
+    [SerializeField] private GameObject hideWhenLobbyCreated4;
 
     public async void CreateLobbyFunction()
     {
@@ -54,6 +55,7 @@ public class CreateLobby : MonoBehaviour
             hideWhenLobbyCreated.SetActive(false);
             hideWhenLobbyCreated2.SetActive(false);
             hideWhenLobbyCreated3.SetActive(false);
+            hideWhenLobbyCreated4.SetActive(false);
         }
 
         //relay and start host netcode

@@ -20,6 +20,12 @@ public class Model : NetworkBehaviour
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
     
+    //syncs hat selection across network
+    private NetworkVariable<int> hatIndex = new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+    
     private Vector2 currentInput;
     private View view;
     private FirstPersonCamera fpsCamera;
@@ -47,28 +53,39 @@ public class Model : NetworkBehaviour
                 ? PlayerNameManager.Instance.PlayerName 
                 : $"Player{OwnerClientId}";
             
-            RequestSetNameServerRpc(chosenName);
+            int chosenHat = PlayerHatManager.Instance != null
+                ? PlayerHatManager.Instance.SelectedHatIndex
+                : 0;
+            
+            RequestSetPlayerDataServerRpc(chosenName, chosenHat);
         }
         
-        //server (host) sets their own name
+        //server (host) sets their own name and hat
         if (IsServer && IsOwner)
         {
             string chosenName = PlayerNameManager.Instance != null 
                 ? PlayerNameManager.Instance.PlayerName 
                 : "Host";
             
+            int chosenHat = PlayerHatManager.Instance != null
+                ? PlayerHatManager.Instance.SelectedHatIndex
+                : 0;
+            
             playerName.Value = chosenName;
-            Debug.Log($"Server set own name: {playerName.Value}");
+            hatIndex.Value = chosenHat;
+            Debug.Log($"Server set own name: {playerName.Value}, hat: {hatIndex.Value}");
         }
         
         //subscribe to network variable changes
         playerName.OnValueChanged += OnPlayerNameChanged;
+        hatIndex.OnValueChanged += OnHatChanged;
         
         Invoke(nameof(InitializeNametag), 0.1f);
+        Invoke(nameof(InitializeHat), 0.1f);
     }
 
     [ServerRpc]
-    private void RequestSetNameServerRpc(string name, ServerRpcParams rpcParams = default)
+    private void RequestSetPlayerDataServerRpc(string name, int hat, ServerRpcParams rpcParams = default)
     {
         // Validate name length
         if (name.Length > 12)
@@ -81,8 +98,15 @@ public class Model : NetworkBehaviour
             name = $"Player{OwnerClientId}";
         }
         
+        // Validate hat index
+        if (hat < 0 || hat > 1)
+        {
+            hat = 0;
+        }
+        
         playerName.Value = name;
-        Debug.Log($"Server set name for ClientID {OwnerClientId}: {playerName.Value}");
+        hatIndex.Value = hat;
+        Debug.Log($"Server set name for ClientID {OwnerClientId}: {playerName.Value}, hat: {hatIndex.Value}");
     }
 
     private void InitializeNametag()
@@ -94,12 +118,22 @@ public class Model : NetworkBehaviour
         }
     }
 
+    private void InitializeHat()
+    {
+        if (view != null)
+        {
+            Debug.Log($"Setting hat to: {hatIndex.Value}");
+            view.SetHat(hatIndex.Value);
+        }
+    }
+
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
         
         //unsubscribe from network variable callbacks
         playerName.OnValueChanged -= OnPlayerNameChanged;
+        hatIndex.OnValueChanged -= OnHatChanged;
     }
 
     private void OnPlayerNameChanged(FixedString32Bytes previousValue, FixedString32Bytes newValue)
@@ -108,6 +142,15 @@ public class Model : NetworkBehaviour
         {
             Debug.Log($"Name changed from {previousValue} to {newValue}");
             view.SetPlayerName(newValue.ToString());
+        }
+    }
+
+    private void OnHatChanged(int previousValue, int newValue)
+    {
+        if (view != null)
+        {
+            Debug.Log($"Hat changed from {previousValue} to {newValue}");
+            view.SetHat(newValue);
         }
     }
 

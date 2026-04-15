@@ -7,6 +7,9 @@ public class View : MonoBehaviour
     [SerializeField] private float nametagHeight = 1.5f;
     [SerializeField] private float nametagScale = 0.01f;
     
+    [Header("Hat Settings")]
+    [SerializeField] private GameObject[] hatPrefabs; //inspector
+    [SerializeField] private Transform hatSocket; //where the hat sits on the player
     
     private GameObject nametagObject;
     private TextMeshPro nametagText;
@@ -14,6 +17,7 @@ public class View : MonoBehaviour
     private Renderer playerRenderer;
     private TextMeshProUGUI hostScoreText;
     private TextMeshProUGUI clientScoreText;
+    private GameObject currentHat;
 
     void Start()
     {
@@ -75,6 +79,37 @@ public class View : MonoBehaviour
         {
             nametagText.text = playerName;
         }
+    }
+
+    public void SetHat(int hatIndex)
+    {
+        //remove current hat if exists
+        if (currentHat != null)
+        {
+            Destroy(currentHat);
+            currentHat = null;
+        }
+        
+        //validate hat index
+        if (hatPrefabs == null || hatIndex < 0 || hatIndex >= hatPrefabs.Length)
+        {
+            Debug.LogWarning($"Invalid hat index: {hatIndex}");
+            return;
+        }
+        
+        if (hatPrefabs[hatIndex] == null)
+        {
+            Debug.LogWarning($"Hat prefab at index {hatIndex} is null");
+            return;
+        }
+        
+        //create new hat
+        Transform parent = hatSocket != null ? hatSocket : transform;
+        currentHat = Instantiate(hatPrefabs[hatIndex], parent);
+        currentHat.transform.localPosition = Vector3.zero;
+        currentHat.transform.localRotation = Quaternion.identity;
+        
+        Debug.Log($"Hat {hatIndex} equipped");
     }
 
     public void UpdateVisuals(Vector3 position)
