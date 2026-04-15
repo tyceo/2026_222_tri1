@@ -48,7 +48,7 @@ public class CreateLobby : MonoBehaviour
 
         Debug.Log("Lobby created Code: " + currentLobby.LobbyCode);
         
-        //display lobby code on UI
+        //display lobby code on UI and go to game 
         if (lobbyCodeText != null)
         {
             lobbyCodeText.text = $"Lobby Code: {currentLobby.LobbyCode}";

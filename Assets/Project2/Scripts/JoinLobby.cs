@@ -19,6 +19,7 @@ public class JoinLobby : MonoBehaviour
     [SerializeField] private GameObject hideWhenLobbyCreated2;
     [SerializeField] private GameObject hideWhenLobbyCreated3;
     [SerializeField] private GameObject hideWhenLobbyCreated4;
+    [SerializeField] private GameObject hideWhenLobbyCreated5;
 
     public async void JoinLobbyFromInput()
     {
@@ -34,6 +35,7 @@ public class JoinLobby : MonoBehaviour
         hideWhenLobbyCreated2.SetActive(false);
         hideWhenLobbyCreated3.SetActive(false);
         hideWhenLobbyCreated4.SetActive(false);
+        hideWhenLobbyCreated5.SetActive(false);
 
         Lobby lobby = await LobbyService.Instance.JoinLobbyByCodeAsync(lobbyCode);
 
