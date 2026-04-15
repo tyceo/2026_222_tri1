@@ -87,6 +87,69 @@ public class CreateLobby : MonoBehaviour
         StartCoroutine(HeartbeatLoop());
     }
 
+    public async void CreatePrivateLobbyFunction()
+    {
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            Debug.LogError("not signed in yet");
+            return;
+        }
+
+        string lobbyName = "My Private Lobby";
+        int maxPlayers = 4;
+
+        CreateLobbyOptions options = new CreateLobbyOptions
+        {
+            IsPrivate = true
+        };
+
+        currentLobby = await LobbyService.Instance.CreateLobbyAsync(
+            lobbyName,
+            maxPlayers,
+            options
+        );
+
+        Debug.Log("Private Lobby created Code: " + currentLobby.LobbyCode);
+        
+        //display lobby code on UI and go to game 
+        if (lobbyCodeText != null)
+        {
+            lobbyCodeText.text = $"Lobby Code: {currentLobby.LobbyCode}";
+            hideWhenLobbyCreated.SetActive(false);
+            hideWhenLobbyCreated2.SetActive(false);
+            hideWhenLobbyCreated3.SetActive(false);
+            hideWhenLobbyCreated4.SetActive(false);
+        }
+
+        //relay and start host netcode
+
+        Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers);
+        string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+
+        var transport = NetworkManager.Singleton.GetComponent<Unity.Netcode.Transports.UTP.UnityTransport>();
+        transport.SetRelayServerData(allocation.ToRelayServerData("dtls"));
+
+        NetworkManager.Singleton.StartHost();
+
+        //store relay code in lobby
+        var updateOptions = new UpdateLobbyOptions
+        {
+            Data = new Dictionary<string, DataObject>
+            {
+                {
+                    "RelayCode",
+                    new DataObject(DataObject.VisibilityOptions.Public, joinCode)
+                }
+            }
+        };
+
+        await LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, updateOptions);
+
+        Debug.Log("Relay started + Host running");
+
+        StartCoroutine(HeartbeatLoop());
+    }
+
     private System.Collections.IEnumerator HeartbeatLoop()
     {
         while (currentLobby != null)
