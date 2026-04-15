@@ -32,7 +32,9 @@ public class CreateLobby : MonoBehaviour
             return;
         }
 
-        string lobbyName = "My Lobby";
+        string lobbyName = PlayerNameManager.Instance != null 
+            ? PlayerNameManager.Instance.PlayerName + "'s Lobby"
+            : "My Lobby";
         int maxPlayers = 4;
 
         CreateLobbyOptions options = new CreateLobbyOptions
@@ -95,7 +97,9 @@ public class CreateLobby : MonoBehaviour
             return;
         }
 
-        string lobbyName = "My Private Lobby";
+        string lobbyName = PlayerNameManager.Instance != null 
+            ? PlayerNameManager.Instance.PlayerName + "'s Lobby"
+            : "My Private Lobby";
         int maxPlayers = 4;
 
         CreateLobbyOptions options = new CreateLobbyOptions

@@ -41,7 +41,7 @@ public class PlayerHealth : NetworkBehaviour
 
     private void OnHealthChanged(float previousValue, float newValue)
     {
-        Debug.Log($"Health changed: {previousValue} -> {newValue}");
+        //Debug.Log($"Health changed: {previousValue} -> {newValue}");
         
         UpdateHealthVisuals(newValue);
         
@@ -57,7 +57,7 @@ public class PlayerHealth : NetworkBehaviour
         if (!IsServer) return;
         
         currentHealth.Value = Mathf.Max(0, currentHealth.Value - damage);
-        Debug.Log($"Player took {damage} damage. Health: {currentHealth.Value}/{maxHealth}");
+        //Debug.Log($"Player took {damage} damage. Health: {currentHealth.Value}/{maxHealth}");
     }
 
     public void Heal(float amount)
@@ -78,7 +78,7 @@ public class PlayerHealth : NetworkBehaviour
 
     private void OnDeath()
     {
-        Debug.Log($"Player {OwnerClientId} died!");
+        //Debug.Log($"Player {OwnerClientId} died!");
         
         if (IsServer)
         {
@@ -88,7 +88,7 @@ public class PlayerHealth : NetworkBehaviour
         }
     }
 
-    private void AwardPointToOtherPlayer()
+    private void AwardPointToOtherPlayer() //loot locker added
     {
         if (!IsServer) return;
         
@@ -100,6 +100,13 @@ public class PlayerHealth : NetworkBehaviour
             if (player.OwnerClientId != OwnerClientId)
             {
                 player.score.Value++;
+                
+                //submit score to leaderboard (only for local player)
+                if (player.IsOwner && LootLockerManager.Instance != null)
+                {
+                    LootLockerManager.Instance.SubmitScore(player.score.Value);
+                    Debug.Log("Score submitted to leaderboard");
+                }
             }
         }
     }
@@ -112,7 +119,10 @@ public class PlayerHealth : NetworkBehaviour
         
         transform.position = new Vector3(0, 1, 0);
         
-        Debug.Log("respawned");
+        //Debug.Log("respawned");
     }
+
+    
+    
 
 }

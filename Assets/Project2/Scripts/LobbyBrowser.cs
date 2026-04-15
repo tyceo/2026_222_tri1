@@ -98,7 +98,7 @@ public class LobbyBrowser : MonoBehaviour
                 }
             }
 
-            Debug.Log($"Found {queryResponse.Results.Count} lobbies");
+            //Debug.Log($"Found {queryResponse.Results.Count} lobbies");
         }
         catch (LobbyServiceException e)
         {
