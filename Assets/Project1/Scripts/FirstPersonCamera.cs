@@ -120,11 +120,6 @@ public class FirstPersonCamera : NetworkBehaviour
         if (!IsLocalPlayer) return;
 
         HandleMouseLook();
-        
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            ToggleCursorLock();
-        }
     }
 
     void LateUpdate()
