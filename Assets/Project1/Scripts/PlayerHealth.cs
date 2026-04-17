@@ -88,26 +88,39 @@ public class PlayerHealth : NetworkBehaviour
         }
     }
 
-    private void AwardPointToOtherPlayer() //loot locker added
+    private void AwardPointToOtherPlayer()
     {
         if (!IsServer) return;
-        
+    
         ClientInputs[] allPlayers = FindObjectsOfType<ClientInputs>();
-        
+    
         foreach (ClientInputs player in allPlayers)
         {
             //point to the player who is not this one
             if (player.OwnerClientId != OwnerClientId)
             {
                 player.score.Value++;
-                
-                //submit score to leaderboard (only for local player)
-                if (player.IsOwner && LootLockerManager.Instance != null)
+            
+                //notify the winning client to submit their score
+                SubmitScoreClientRpc(player.score.Value, new ClientRpcParams
                 {
-                    LootLockerManager.Instance.SubmitScore(player.score.Value);
-                    Debug.Log("Score submitted to leaderboard");
-                }
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = new ulong[] { player.OwnerClientId }
+                    }
+                });
             }
+        }
+    }
+
+    [ClientRpc]
+    private void SubmitScoreClientRpc(int newScore, ClientRpcParams clientRpcParams = default)
+    {
+        //only the target client executes this
+        if (LootLockerManager.Instance != null)
+        {
+            LootLockerManager.Instance.SubmitScore(newScore);
+            Debug.Log($"Score {newScore} submitted to leaderboard");
         }
     }
 
