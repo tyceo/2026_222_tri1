@@ -6,13 +6,31 @@ public class Model : NetworkBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
-    [SerializeField] private float interpolationSpeed = 15f;
+    
+
 
     //syncs position across all clients
     private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>(
         default,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
+    
+    //interpolation state
+    
+    //[SerializeField] private float interpolationSpeed = 15f;
+        
+    [SerializeField] private float interpolationTime = 0.05f; //time to reach target
+    [SerializeField] private bool useInterpolation = true;
+    
+    private Vector3 positionVelocity;
+    private Vector3 lastNetworkPosition;
+    private Vector3 estimatedVelocity;
+    [SerializeField] private bool useExtrapolation = true;
+    [SerializeField] private float extrapolationLimit = 0.8f; //max distance to extrapolate will teleport instead
+    [SerializeField] private float snapThreshold = 15f; //teleport if further than this
+    
+    
+    
     
     //syncs player name across network
     private NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>(
@@ -45,6 +63,9 @@ public class Model : NetworkBehaviour
         {
             networkPosition.Value = transform.position;
         }
+        
+        //initialize interpolation tracking
+        lastNetworkPosition = networkPosition.Value;
         
         //client requests their chosen name be set
         if (IsOwner && !IsServer)
@@ -173,7 +194,46 @@ public class Model : NetworkBehaviour
         //clients interpolate to server's authoritative position
         if (!IsServer)
         {
-            transform.position = Vector3.Lerp(transform.position, networkPosition.Value, interpolationSpeed * Time.deltaTime);
+            float distance = Vector3.Distance(transform.position, networkPosition.Value);
+            
+            //snap if too far
+            if (distance > snapThreshold)
+            {
+                transform.position = networkPosition.Value;
+                positionVelocity = Vector3.zero;
+                estimatedVelocity = Vector3.zero;
+            }
+            else if (useInterpolation)
+            {
+                //use velocity
+                if (networkPosition.Value != lastNetworkPosition)
+                {
+                    estimatedVelocity = (networkPosition.Value - lastNetworkPosition) / Time.deltaTime;
+                    lastNetworkPosition = networkPosition.Value;
+                }
+                
+                //target with extrapolation
+                Vector3 targetPosition = networkPosition.Value;
+                if (useExtrapolation)
+                {
+                    Vector3 extrapolation = estimatedVelocity * interpolationTime;
+                    if (extrapolation.magnitude < extrapolationLimit)
+                    {
+                        targetPosition += extrapolation;
+                    }
+                }
+                
+                transform.position = Vector3.SmoothDamp(
+                    transform.position, 
+                    targetPosition, 
+                    ref positionVelocity, 
+                    interpolationTime
+                );
+            }
+            else
+            {
+                transform.position = networkPosition.Value;
+            }
         }
 
         if (view != null)
@@ -201,7 +261,7 @@ public class Model : NetworkBehaviour
         }
     }
 
-    //get player name for UI display
+    //get player name for UI  
     public string GetPlayerName()
     {
         return playerName.Value.ToString();

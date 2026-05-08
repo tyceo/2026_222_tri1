@@ -239,7 +239,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   moveSpeed: 5
-  interpolationSpeed: 65.15
+  interpolationTime: 0.05
+  useInterpolation: 1
+  useExtrapolation: 1
+  extrapolationLimit: 0.8
+  snapThreshold: 15
 --- !u!114 &6473041132950401053
 MonoBehaviour:
   m_ObjectHideFlags: 0
