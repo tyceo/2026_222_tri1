@@ -4,6 +4,10 @@ using Unity.Netcode;
 public class ClientInputs : NetworkBehaviour
 {
     public NetworkVariable<int> score = new NetworkVariable<int>();
+
+    private Vector2 lastSentInput;
+    private float inputSendRate = 0.05f; // Send every 50ms
+    private float lastInputSendTime;
     
     private Model model;
     private PlayerInventory inventory;
@@ -29,9 +33,21 @@ public class ClientInputs : NetworkBehaviour
             if (Input.GetKey(KeyCode.D)) moveInput.x += 1;
 
             //send movement input to server via rpc
-            if (moveInput != Vector2.zero)
+            if (moveInput != Vector2.zero || lastSentInput != Vector2.zero)
             {
-                SendMovementInput_ServerRpc(moveInput);
+                //send if input changed or enough time passed
+                if (moveInput != lastSentInput || Time.time - lastInputSendTime > inputSendRate)
+                {
+                    SendMovementInput_ServerRpc(moveInput);
+                    lastSentInput = moveInput;
+                    lastInputSendTime = Time.time;
+                }
+            }
+            
+            //input locally immediately (for client prediction)
+            if (model != null)
+            {
+                model.SetMovementInput(moveInput);
             }
 
             if (Input.GetMouseButtonDown(0))

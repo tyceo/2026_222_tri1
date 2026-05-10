@@ -6,45 +6,42 @@ public class Model : NetworkBehaviour
 {
     [Header("Movement Settings")]
     public float moveSpeed = 5f;
+    [SerializeField] private bool useClientPrediction = true;
+    [SerializeField] private float inputTimeout = 0.2f;
     
-
-
-    //syncs position across all clients
+    [Header("Interpolation Settings")]
+    [SerializeField] private bool useInterpolation = true;
+    [SerializeField] private float interpolationTime = 0.05f;
+    [SerializeField] private bool useExtrapolation = true;
+    [SerializeField] private float extrapolationLimit = 0.8f;
+    [SerializeField] private float snapThreshold = 15f;
+    
+    //network variables
     private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>(
         default,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
     
-    //interpolation state
-    
-    //[SerializeField] private float interpolationSpeed = 15f;
-        
-    [SerializeField] private float interpolationTime = 0.05f; //time to reach target
-    [SerializeField] private bool useInterpolation = true;
-    
-    private Vector3 positionVelocity;
-    private Vector3 lastNetworkPosition;
-    private Vector3 estimatedVelocity;
-    [SerializeField] private bool useExtrapolation = true;
-    [SerializeField] private float extrapolationLimit = 0.8f; //max distance to extrapolate will teleport instead
-    [SerializeField] private float snapThreshold = 15f; //teleport if further than this
-    
-    
-    
-    
-    //syncs player name across network
     private NetworkVariable<FixedString32Bytes> playerName = new NetworkVariable<FixedString32Bytes>(
         default,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
     
-    //syncs hat selection across network
     private NetworkVariable<int> hatIndex = new NetworkVariable<int>(
         0,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server);
     
+    //input state
     private Vector2 currentInput;
+    private float lastInputTime;
+    
+    //interpolation state
+    private Vector3 positionVelocity;
+    private Vector3 lastNetworkPosition;
+    private Vector3 estimatedVelocity;
+    
+    //component references
     private View view;
     private FirstPersonCamera fpsCamera;
 
@@ -58,16 +55,14 @@ public class Model : NetworkBehaviour
     {
         base.OnNetworkSpawn();
         
-        //server sets initial position
         if (IsServer)
         {
             networkPosition.Value = transform.position;
         }
         
-        //initialize interpolation tracking
         lastNetworkPosition = networkPosition.Value;
         
-        //client requests their chosen name be set
+        //client requests player data
         if (IsOwner && !IsServer)
         {
             string chosenName = PlayerNameManager.Instance != null 
@@ -81,7 +76,7 @@ public class Model : NetworkBehaviour
             RequestSetPlayerDataServerRpc(chosenName, chosenHat);
         }
         
-        //server (host) sets their own name and hat
+        //server sets own player data
         if (IsServer && IsOwner)
         {
             string chosenName = PlayerNameManager.Instance != null 
@@ -94,10 +89,8 @@ public class Model : NetworkBehaviour
             
             playerName.Value = chosenName;
             hatIndex.Value = chosenHat;
-            Debug.Log($"Server set own name: {playerName.Value}, hat: {hatIndex.Value}");
         }
         
-        //subscribe to network variable changes
         playerName.OnValueChanged += OnPlayerNameChanged;
         hatIndex.OnValueChanged += OnHatChanged;
         
@@ -105,98 +98,52 @@ public class Model : NetworkBehaviour
         Invoke(nameof(InitializeHat), 0.1f);
     }
 
-    [ServerRpc]
-    private void RequestSetPlayerDataServerRpc(string name, int hat, ServerRpcParams rpcParams = default)
-    {
-        // Validate name length
-        if (name.Length > 12)
-        {
-            name = name.Substring(0, 12);
-        }
-        
-        if (string.IsNullOrEmpty(name))
-        {
-            name = $"Player{OwnerClientId}";
-        }
-        
-        // Validate hat index
-        if (hat < 0 || hat > 1)
-        {
-            hat = 0;
-        }
-        
-        playerName.Value = name;
-        hatIndex.Value = hat;
-        Debug.Log($"Server set name for ClientID {OwnerClientId}: {playerName.Value}, hat: {hatIndex.Value}");
-    }
-
-    private void InitializeNametag()
-    {
-        if (view != null)
-        {
-            Debug.Log($"Setting nametag to: {playerName.Value}");
-            view.SetPlayerName(playerName.Value.ToString());
-        }
-    }
-
-    private void InitializeHat()
-    {
-        if (view != null)
-        {
-            Debug.Log($"Setting hat to: {hatIndex.Value}");
-            view.SetHat(hatIndex.Value);
-        }
-    }
-
     public override void OnNetworkDespawn()
     {
         base.OnNetworkDespawn();
         
-        //unsubscribe from network variable callbacks
         playerName.OnValueChanged -= OnPlayerNameChanged;
         hatIndex.OnValueChanged -= OnHatChanged;
     }
 
-    private void OnPlayerNameChanged(FixedString32Bytes previousValue, FixedString32Bytes newValue)
-    {
-        if (view != null)
-        {
-            Debug.Log($"Name changed from {previousValue} to {newValue}");
-            view.SetPlayerName(newValue.ToString());
-        }
-    }
-
-    private void OnHatChanged(int previousValue, int newValue)
-    {
-        if (view != null)
-        {
-            Debug.Log($"Hat changed from {previousValue} to {newValue}");
-            view.SetHat(newValue);
-        }
-    }
-
     void Update()
     {
-        //server processes movement and updates network position
+        //server authoritative movement
         if (IsServer)
         {
+            if (Time.time - lastInputTime > inputTimeout)
+            {
+                currentInput = Vector2.zero;
+            }
+            
             Vector3 forward = transform.forward;
             Vector3 right = transform.right;
-            
             Vector3 movement = (right * currentInput.x + forward * currentInput.y) * moveSpeed * Time.deltaTime;
+            
             transform.position += movement;
-            
             networkPosition.Value = transform.position;
-            
-            currentInput = Vector2.zero;
         }
-        
-        //clients interpolate to server's authoritative position
-        if (!IsServer)
+        //local player client-side prediction
+        else if (IsOwner && useClientPrediction)
         {
             float distance = Vector3.Distance(transform.position, networkPosition.Value);
             
-            //snap if too far
+            if (distance > snapThreshold)
+            {
+                transform.position = networkPosition.Value;
+                positionVelocity = Vector3.zero;
+                estimatedVelocity = Vector3.zero;
+            }
+            else if (distance > 0.1f)
+            {
+                transform.position = Vector3.Lerp(transform.position, networkPosition.Value, 0.1f);
+            }
+        }
+        //remote players interpolation
+        else if (!IsOwner)
+        {
+            float distance = Vector3.Distance(transform.position, networkPosition.Value);
+            
             if (distance > snapThreshold)
             {
                 transform.position = networkPosition.Value;
@@ -205,15 +152,14 @@ public class Model : NetworkBehaviour
             }
             else if (useInterpolation)
             {
-                //use velocity
                 if (networkPosition.Value != lastNetworkPosition)
                 {
                     estimatedVelocity = (networkPosition.Value - lastNetworkPosition) / Time.deltaTime;
                     lastNetworkPosition = networkPosition.Value;
                 }
                 
-                //target with extrapolation
                 Vector3 targetPosition = networkPosition.Value;
+                
                 if (useExtrapolation)
                 {
                     Vector3 extrapolation = estimatedVelocity * interpolationTime;
@@ -244,14 +190,21 @@ public class Model : NetworkBehaviour
 
     public void SetMovementInput(Vector2 input)
     {
-        //only server processes movement input
         if (IsServer)
         {
             currentInput = input.normalized;
+            lastInputTime = Time.time;
+        }
+        
+        if (!IsServer && IsOwner && useClientPrediction)
+        {
+            Vector3 forward = transform.forward;
+            Vector3 right = transform.right;
+            Vector3 movement = (right * input.x + forward * input.y) * moveSpeed * Time.deltaTime;
+            transform.position += movement;
         }
     }
 
-    //forces position update from spawn manager
     public void ForceSetPosition(Vector3 position)
     {
         if (IsServer)
@@ -261,9 +214,65 @@ public class Model : NetworkBehaviour
         }
     }
 
-    //get player name for UI  
     public string GetPlayerName()
     {
         return playerName.Value.ToString();
+    }
+
+    //server rpc for setting player data
+    [ServerRpc]
+    private void RequestSetPlayerDataServerRpc(string name, int hat, ServerRpcParams rpcParams = default)
+    {
+        if (name.Length > 12)
+        {
+            name = name.Substring(0, 12);
+        }
+        
+        if (string.IsNullOrEmpty(name))
+        {
+            name = $"Player{OwnerClientId}";
+        }
+        
+        if (hat < 0 || hat > 1)
+        {
+            hat = 0;
+        }
+        
+        playerName.Value = name;
+        hatIndex.Value = hat;
+    }
+
+    //network variable callbacks
+    private void OnPlayerNameChanged(FixedString32Bytes previousValue, FixedString32Bytes newValue)
+    {
+        if (view != null)
+        {
+            view.SetPlayerName(newValue.ToString());
+        }
+    }
+
+    private void OnHatChanged(int previousValue, int newValue)
+    {
+        if (view != null)
+        {
+            view.SetHat(newValue);
+        }
+    }
+
+    //initialization helpers
+    private void InitializeNametag()
+    {
+        if (view != null)
+        {
+            view.SetPlayerName(playerName.Value.ToString());
+        }
+    }
+
+    private void InitializeHat()
+    {
+        if (view != null)
+        {
+            view.SetHat(hatIndex.Value);
+        }
     }
 }
