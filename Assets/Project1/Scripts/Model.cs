@@ -11,10 +11,10 @@ public class Model : NetworkBehaviour
     
     [Header("Interpolation Settings")]
     [SerializeField] private bool useInterpolation = true;
-    [SerializeField] private float interpolationTime = 0.05f;
+    [SerializeField] private float interpolationTime = 0.03f;
     [SerializeField] private bool useExtrapolation = true;
-    [SerializeField] private float extrapolationLimit = 0.8f;
-    [SerializeField] private float snapThreshold = 15f;
+    [SerializeField] private float extrapolationLimit = 1.5f;
+    [SerializeField] private float snapThreshold = 30f;
     
     //network variables
     private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>(

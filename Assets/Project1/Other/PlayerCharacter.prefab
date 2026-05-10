@@ -241,11 +241,11 @@ MonoBehaviour:
   moveSpeed: 5
   useClientPrediction: 1
   inputTimeout: 0.2
-  useInterpolation: 0
-  interpolationTime: 0.05
-  useExtrapolation: 0
-  extrapolationLimit: 0.8
-  snapThreshold: 15
+  useInterpolation: 1
+  interpolationTime: 0.03
+  useExtrapolation: 1
+  extrapolationLimit: 1.5
+  snapThreshold: 30
 --- !u!114 &6473041132950401053
 MonoBehaviour:
   m_ObjectHideFlags: 0

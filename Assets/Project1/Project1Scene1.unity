@@ -4411,7 +4411,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PresetAsset: {fileID: 0}
   m_PresetReference:
-    rid: 1470800295202652324
+    rid: 1470800295202652340
   m_Scenario:
     rid: -2
   m_IsScenarioSettingsFolded: 0
@@ -4421,14 +4421,14 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 1470800295202652324
+    - rid: 1470800295202652340
       type: {class: NetworkSimulatorPreset, ns: Unity.Multiplayer.Tools.NetworkSimulator.Runtime, asm: Unity.Multiplayer.Tools.NetworkSimulator.Runtime}
       data:
-        <Name>k__BackingField: 'Home Fiber [Best real-world scenario]'
-        <Description>k__BackingField: Best case scenario for desktop and console
-          platforms. Excellent ping, excellent jitter and no packet loss.
-        <PacketDelayMs>k__BackingField: 10
-        <PacketJitterMs>k__BackingField: 1
+        <Name>k__BackingField: 'Home Cable [Optimal real-world scenario]'
+        <Description>k__BackingField: Optimal scenario for desktop and console platforms.
+          Very good ping, very good jitter and no packet loss.
+        <PacketDelayMs>k__BackingField: 25
+        <PacketJitterMs>k__BackingField: 5
         <PacketLossInterval>k__BackingField: 0
         <PacketLossPercent>k__BackingField: 0
 --- !u!1 &690381979
