@@ -11,10 +11,21 @@ public class Model : NetworkBehaviour
     
     [Header("Interpolation Settings")]
     [SerializeField] private bool useInterpolation = true;
-    [SerializeField] private float interpolationTime = 0.03f;
+    [SerializeField] private float interpolationTime = 0.075f;
     [SerializeField] private bool useExtrapolation = true;
-    [SerializeField] private float extrapolationLimit = 1.5f;
-    [SerializeField] private float snapThreshold = 30f;
+    [SerializeField] private float extrapolationLimit = 1f;
+    [SerializeField] private float snapThreshold = 15f;
+    
+    [Header("Distance-Based LOD Settings")]
+    [SerializeField] private bool useDistanceBasedLOD = true;
+    [SerializeField] private float closeDistance = 10f;
+    [SerializeField] private float farDistance = 30f;
+    [SerializeField] private float closeInterpolationTime = 0.03f;
+    [SerializeField] private float mediumInterpolationTime = 0.075f;
+    [SerializeField] private float farInterpolationTime = 0.15f;
+    [SerializeField] private float closeExtrapolationLimit = 1.5f;
+    [SerializeField] private float mediumExtrapolationLimit = 1f;
+    [SerializeField] private float farExtrapolationLimit = 0.5f;
     
     //network variables
     private NetworkVariable<Vector3> networkPosition = new NetworkVariable<Vector3>(
@@ -41,6 +52,11 @@ public class Model : NetworkBehaviour
     private Vector3 lastNetworkPosition;
     private Vector3 estimatedVelocity;
     
+    //lod state
+    private float currentInterpolationTime;
+    private float currentExtrapolationLimit;
+    private bool currentUseExtrapolation;
+    
     //component references
     private View view;
     private FirstPersonCamera fpsCamera;
@@ -49,6 +65,11 @@ public class Model : NetworkBehaviour
     {
         view = GetComponent<View>();
         fpsCamera = GetComponent<FirstPersonCamera>();
+        
+        //initialize lod values
+        currentInterpolationTime = interpolationTime;
+        currentExtrapolationLimit = extrapolationLimit;
+        currentUseExtrapolation = useExtrapolation;
     }
 
     public override void OnNetworkSpawn()
@@ -139,9 +160,22 @@ public class Model : NetworkBehaviour
                 transform.position = Vector3.Lerp(transform.position, networkPosition.Value, 0.1f);
             }
         }
-        //remote players interpolation
+        //remote players interpolation 
         else if (!IsOwner)
         {
+            //calculate lod settings based on distance
+            if (useDistanceBasedLOD)
+            {
+                UpdateLODSettings();
+            }
+            else
+            {
+                //use default settings if lod is disabled
+                currentInterpolationTime = interpolationTime;
+                currentExtrapolationLimit = extrapolationLimit;
+                currentUseExtrapolation = useExtrapolation;
+            }
+            
             float distance = Vector3.Distance(transform.position, networkPosition.Value);
             
             if (distance > snapThreshold)
@@ -160,10 +194,10 @@ public class Model : NetworkBehaviour
                 
                 Vector3 targetPosition = networkPosition.Value;
                 
-                if (useExtrapolation)
+                if (currentUseExtrapolation)
                 {
-                    Vector3 extrapolation = estimatedVelocity * interpolationTime;
-                    if (extrapolation.magnitude < extrapolationLimit)
+                    Vector3 extrapolation = estimatedVelocity * currentInterpolationTime;
+                    if (extrapolation.magnitude < currentExtrapolationLimit)
                     {
                         targetPosition += extrapolation;
                     }
@@ -173,7 +207,7 @@ public class Model : NetworkBehaviour
                     transform.position, 
                     targetPosition, 
                     ref positionVelocity, 
-                    interpolationTime
+                    currentInterpolationTime
                 );
             }
             else
@@ -274,5 +308,62 @@ public class Model : NetworkBehaviour
         {
             view.SetHat(hatIndex.Value);
         }
+    }
+
+    //calculate and apply lod settings based on distance to local player
+    private void UpdateLODSettings()
+    {
+        //find local player
+        Transform localPlayerTransform = GetLocalPlayerTransform();
+        if (localPlayerTransform == null)
+        {
+            //fallback to default
+            currentInterpolationTime = interpolationTime;
+            currentExtrapolationLimit = extrapolationLimit;
+            currentUseExtrapolation = useExtrapolation;
+            return;
+        }
+        
+        //calculate distance to local player
+        float distanceToLocalPlayer = Vector3.Distance(transform.position, localPlayerTransform.position);
+        
+        //determine lod tier and apply settings
+        if (distanceToLocalPlayer < closeDistance)
+        {
+            //close tier
+            currentInterpolationTime = closeInterpolationTime;
+            currentExtrapolationLimit = closeExtrapolationLimit;
+            currentUseExtrapolation = true;
+        }
+        else if (distanceToLocalPlayer < farDistance)
+        {
+            //medium tier
+            currentInterpolationTime = mediumInterpolationTime;
+            currentExtrapolationLimit = mediumExtrapolationLimit;
+            currentUseExtrapolation = true;
+        }
+        else
+        {
+            //far tier
+            currentInterpolationTime = farInterpolationTime;
+            currentExtrapolationLimit = farExtrapolationLimit;
+            currentUseExtrapolation = false;
+        }
+    }
+
+    //find the local player's transform for distance calculations
+    private Transform GetLocalPlayerTransform()
+    {
+        //search for local player
+        Model[] allPlayers = FindObjectsOfType<Model>();
+        foreach (Model player in allPlayers)
+        {
+            if (player.IsOwner && player != this)
+            {
+                return player.transform;
+            }
+        }
+        
+        return null;
     }
 }
